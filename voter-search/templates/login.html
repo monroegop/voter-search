@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voter Registry — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #09090f;
+    color: #e2ddd4;
+    font-family: 'Source Code Pro', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card {
+    background: #0f1018;
+    border: 1px solid #1c2030;
+    border-radius: 10px;
+    padding: 48px 44px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  .logo span { color: #c9a96e; }
+  .subtitle {
+    font-size: 11px;
+    color: #3e4454;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+  label {
+    display: block;
+    text-align: left;
+    font-size: 10px;
+    color: #5a6070;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  input[type="password"] {
+    width: 100%;
+    background: #09090f;
+    border: 1px solid #1c2030;
+    color: #e2ddd4;
+    padding: 12px 14px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 14px;
+    border-radius: 5px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 20px;
+    letter-spacing: 0.1em;
+  }
+  input[type="password"]:focus {
+    border-color: #c9a96e;
+    box-shadow: 0 0 0 2px rgba(201,169,110,0.15);
+  }
+  button {
+    width: 100%;
+    background: #c9a96e;
+    color: #09090f;
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: #d4b47a; }
+  .error {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  .lock { font-size: 36px; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lock">🔒</div>
+  <div class="logo">Voter Registry <span>Search</span></div>
+  <div class="subtitle">Authorized Access Only</div>
+
+  {% if error %}
+  <div class="error">⚠ {{ error }}</div>
+  {% endif %}
+
+  <form method="POST">
+    <label>Password</label>
+    <input type="password" name="password" placeholder="Enter password…" autofocus autocomplete="current-password">
+    <button type="submit">Sign In →</button>
+  </form>
+</div>
+</body>
+</html>
