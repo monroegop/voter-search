@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voter Registry Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Code+Pro:wght@400;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#09090f; --surface:#0f1018; --surface2:#141620; --border:#1c2030; --border2:#252a3a;
+    --gold:#c9a96e; --gold-dim:rgba(201,169,110,0.15); --text:#e2ddd4; --text-dim:#8a8478;
+    --text-mute:#3e4454; --red:#ef4444;
+  }
+  body { background:var(--bg); color:var(--text); font-family:'Lora',Georgia,serif; min-height:100vh; }
+  ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+  header { border-bottom:1px solid var(--border); padding:18px 32px; display:flex; align-items:center; justify-content:space-between; }
+  .logo { font-family:'Playfair Display',serif; font-size:24px; font-weight:900; }
+  .logo span { color:var(--gold); }
+  .header-meta { font-family:'Source Code Pro',monospace; font-size:11px; color:var(--text-mute); margin-top:3px; letter-spacing:.08em; text-transform:uppercase; }
+  .btn { font-family:'Source Code Pro',monospace; font-size:12px; padding:7px 14px; border-radius:4px; border:1px solid var(--border2); background:var(--surface); color:var(--text-dim); cursor:pointer; transition:all .15s; }
+  .btn:hover { border-color:var(--gold); color:var(--gold); }
+  .btn-danger:hover { border-color:var(--red); color:var(--red); }
+  main { padding:24px 32px; }
+  /* Upload */
+  #drop-zone { border:2px dashed var(--border2); border-radius:8px; padding:50px 40px; text-align:center; cursor:pointer; transition:border-color .2s,background .2s; }
+  #drop-zone:hover,#drop-zone.over { border-color:var(--gold); background:var(--gold-dim); }
+  .dz-icon { font-size:40px; margin-bottom:12px; }
+  .dz-title { font-family:'Playfair Display',serif; font-size:20px; color:var(--gold); margin-bottom:8px; }
+  .dz-sub { font-family:'Source Code Pro',monospace; font-size:12px; color:var(--text-mute); line-height:1.9; }
+  #file-input { display:none; }
+  #progress-wrap { display:none; margin-top:16px; }
+  #progress-bar-outer { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  #progress-bar-inner { height:100%; width:0%; background:var(--gold); transition:width .3s; border-radius:2px; }
+  #progress-label { font-family:'Source Code Pro',monospace; font-size:12px; color:var(--text-dim); margin-top:8px; text-align:center; }
+  #error-box { display:none; margin-top:14px; padding:12px 16px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); border-radius:6px; font-family:'Source Code Pro',monospace; font-size:12px; color:#fca5a5; }
+  /* Search */
+  #search-section { display:none; }
+  .search-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:20px; }
+  .field-wrap label { display:block; font-family:'Source Code Pro',monospace; font-size:10px; color:var(--text-mute); letter-spacing:.1em; text-transform:uppercase; margin-bottom:5px; }
+  .search-input { width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text); padding:9px 12px; font-family:'Source Code Pro',monospace; font-size:13px; border-radius:4px; outline:none; transition:border-color .2s,box-shadow .2s; }
+  .search-input:focus { border-color:var(--gold); box-shadow:0 0 0 2px var(--gold-dim); }
+  .search-input::placeholder { color:var(--text-mute); }
+  .results-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+  .results-count { font-family:'Source Code Pro',monospace; font-size:12px; color:var(--text-mute); }
+  .results-count strong { color:var(--text); }
+  .results-count .gold { color:var(--gold); }
+  .filter-tags { display:flex; gap:6px; flex-wrap:wrap; }
+  .filter-tag { display:inline-flex; align-items:center; gap:4px; background:var(--gold-dim); border:1px solid rgba(201,169,110,.3); color:var(--gold); font-family:'Source Code Pro',monospace; font-size:11px; padding:3px 8px; border-radius:3px; cursor:pointer; }
+  .filter-tag:hover { background:rgba(201,169,110,.25); }
+  .table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:6px; }
+  table { width:100%; border-collapse:collapse; }
+  thead { background:var(--surface2); }
+  th { padding:11px 14px; text-align:left; border-bottom:2px solid var(--border2); font-family:'Source Code Pro',monospace; font-size:10px; color:var(--text-dim); letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; cursor:pointer; user-select:none; transition:color .15s; }
+  th:hover { color:var(--gold); }
+  th.sorted { color:var(--gold); }
+  tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:var(--surface2); }
+  td { padding:10px 14px; font-size:13px; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .empty-state { padding:50px 20px; text-align:center; font-family:'Source Code Pro',monospace; color:var(--text-mute); font-size:13px; }
+  .pagination { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:18px; flex-wrap:wrap; }
+  .pg-btn { background:var(--surface); border:1px solid var(--border2); color:var(--text-dim); padding:5px 11px; border-radius:4px; cursor:pointer; font-family:'Source Code Pro',monospace; font-size:12px; transition:all .15s; min-width:34px; }
+  .pg-btn:hover:not(:disabled) { border-color:var(--gold); color:var(--gold); }
+  .pg-btn:disabled { opacity:.25; cursor:not-allowed; }
+  .pg-btn.active { background:var(--gold); color:#09090f; border-color:var(--gold); font-weight:700; }
+  .pg-info { font-family:'Source Code Pro',monospace; font-size:11px; color:var(--text-mute); padding:0 4px; }
+  .spinner { display:inline-block; width:13px; height:13px; border:2px solid var(--border2); border-top-color:var(--gold); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #record-count strong { color:var(--gold); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo">Voter Registry <span>Search</span></div>
+    <div class="header-meta" id="header-meta">No data loaded</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span id="record-count" style="font-family:'Source Code Pro',monospace;font-size:12px;color:var(--text-dim)"></span>
+    <button class="btn btn-danger" id="btn-new-file" style="display:none" onclick="resetToUpload()">↑ New File</button>
+    <button class="btn btn-danger" id="btn-clear" style="display:none" onclick="clearData()">✕ Clear</button>
+    <a href="/logout" style="font-family:'Source Code Pro',monospace;font-size:11px;color:var(--text-mute);text-decoration:none;padding:7px 12px;border:1px solid var(--border2);border-radius:4px;">Sign out</a>
+  </div>
+</header>
+<main>
+  <!-- Upload -->
+  <div id="upload-section">
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()"
+         ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+      <input type="file" id="file-input" accept=".csv" onchange="handleFileSelect(event)">
+      <div class="dz-icon">📂</div>
+      <div class="dz-title" id="dz-title">Drop your CSV file here</div>
+      <div class="dz-sub" id="dz-sub">or click to browse · any size · all columns auto-detected and searchable</div>
+    </div>
+    <div id="progress-wrap">
+      <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
+      <div id="progress-label"></div>
+    </div>
+    <div id="error-box"></div>
+  </div>
+  <!-- Search -->
+  <div id="search-section">
+    <div class="search-grid" id="search-grid"></div>
+    <div class="results-bar">
+      <div class="results-count" id="results-count"></div>
+      <div class="filter-tags" id="filter-tags"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr id="table-head"></tr></thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</main>
+<script>
+  let columns = [];
+  let currentPage = 1, totalPages = 1;
+  let sortField = '', sortDir = 'asc';
+  let debounceTimer;
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const d = await (await fetch('/api/status')).json();
+      if (d.count > 0 && d.columns && d.columns.length > 0) {
+        columns = d.columns;
+        showSearchSection(d.count);
+        doSearch();
+      }
+    } catch(e) {}
+  });
+
+  function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('over'); }
+  function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('over'); }
+  function handleDrop(e) { e.preventDefault(); document.getElementById('drop-zone').classList.remove('over'); const f=e.dataTransfer.files[0]; if(f) uploadFile(f); }
+  function handleFileSelect(e) { const f=e.target.files[0]; if(f) uploadFile(f); }
+
+  function uploadFile(file) {
+    hideError();
+    document.getElementById('dz-title').textContent = `Uploading ${file.name}…`;
+    document.getElementById('dz-sub').textContent = 'Importing into database — may take a moment for large files';
+    document.getElementById('progress-wrap').style.display = 'block';
+    document.getElementById('progress-label').innerHTML = '<span class="spinner"></span> Processing…';
+    let prog = 0;
+    const iv = setInterval(() => { prog = Math.min(prog + Math.random()*3, 90); document.getElementById('progress-bar-inner').style.width = prog+'%'; }, 200);
+    const fd = new FormData(); fd.append('file', file);
+    fetch('/api/upload', {method:'POST', body:fd})
+      .then(r=>r.json())
+      .then(d => {
+        clearInterval(iv);
+        if (d.error) { showError(d.error); resetUploadUI(); return; }
+        document.getElementById('progress-bar-inner').style.width = '100%';
+        document.getElementById('progress-label').textContent = `✅ ${d.imported.toLocaleString()} records · ${d.columns.length} columns · ${d.elapsed}s`;
+        columns = d.columns;
+        sortField = columns[0]?.slug || '';
+        setTimeout(() => { showSearchSection(d.imported); doSearch(); }, 700);
+      })
+      .catch(err => { clearInterval(iv); showError('Upload failed: '+err.message); resetUploadUI(); });
+  }
+
+  function resetUploadUI() {
+    document.getElementById('dz-title').textContent = 'Drop your CSV file here';
+    document.getElementById('dz-sub').textContent = 'or click to browse · any size · all columns auto-detected and searchable';
+    document.getElementById('progress-wrap').style.display = 'none';
+  }
+
+  function showSearchSection(count) {
+    document.getElementById('upload-section').style.display = 'none';
+    document.getElementById('search-section').style.display = 'block';
+    document.getElementById('btn-new-file').style.display = 'inline-block';
+    document.getElementById('btn-clear').style.display = 'inline-block';
+    document.getElementById('record-count').innerHTML = `<strong>${count.toLocaleString()}</strong> records`;
+    document.getElementById('header-meta').textContent = `${columns.length} searchable columns`;
+    buildSearchFields();
+    buildTableHead();
+    if (!sortField && columns.length) sortField = columns[0].slug;
+  }
+
+  function buildSearchFields() {
+    const grid = document.getElementById('search-grid');
+    grid.innerHTML = columns.map(c => `
+      <div class="field-wrap">
+        <label>${esc(c.label)}</label>
+        <input class="search-input" id="f-${c.slug}" placeholder="Search…" oninput="debounceSearch()" autocomplete="off">
+      </div>
+    `).join('');
+  }
+
+  function buildTableHead() {
+    document.getElementById('table-head').innerHTML = columns.map(c => `
+      <th id="th-${c.slug}" onclick="setSort('${c.slug}')" class="${sortField===c.slug?'sorted':''}">
+        ${esc(c.label)} <span class="sort-arrow">${sortField===c.slug?(sortDir==='asc'?'▲':'▼'):'⇅'}</span>
+      </th>
+    `).join('');
+  }
+
+  function resetToUpload() {
+    document.getElementById('upload-section').style.display = 'block';
+    document.getElementById('search-section').style.display = 'none';
+    document.getElementById('btn-new-file').style.display = 'none';
+    document.getElementById('btn-clear').style.display = 'none';
+    document.getElementById('record-count').innerHTML = '';
+    document.getElementById('header-meta').textContent = 'No data loaded';
+    document.getElementById('file-input').value = '';
+    resetUploadUI(); hideError();
+  }
+
+  async function clearData() {
+    if (!confirm('Clear all records?')) return;
+    await fetch('/api/clear', {method:'POST'});
+    columns = [];
+    resetToUpload();
+  }
+
+  function debounceSearch() { clearTimeout(debounceTimer); currentPage=1; debounceTimer=setTimeout(doSearch,220); }
+
+  function getFilters() {
+    const f={};
+    columns.forEach(c => { const el=document.getElementById('f-'+c.slug); if(el) f[c.slug]=el.value.trim(); });
+    return f;
+  }
+
+  async function doSearch() {
+    const filters = getFilters();
+    const params = new URLSearchParams({...filters, page:currentPage, sort:sortField, dir:sortDir});
+    try {
+      const d = await (await fetch('/api/search?'+params)).json();
+      totalPages = d.pages;
+      renderResults(d.results, d.total, d.page, d.per_page);
+      renderPagination(d.page, d.pages, d.total);
+      renderFilterTags(filters);
+      buildTableHead();
+    } catch(e) {}
+  }
+
+  function setSort(field) {
+    if (sortField===field) sortDir = sortDir==='asc'?'desc':'asc';
+    else { sortField=field; sortDir='asc'; }
+    doSearch();
+  }
+
+  function renderResults(rows, total, page, perPage) {
+    const start=(page-1)*perPage+1, end=Math.min(page*perPage,total);
+    document.getElementById('results-count').innerHTML = total===0
+      ? 'No records found'
+      : `Showing <span class="gold">${start.toLocaleString()}–${end.toLocaleString()}</span> of <strong>${total.toLocaleString()}</strong> records`;
+    const tbody = document.getElementById('results-body');
+    if (!rows.length) { tbody.innerHTML='<tr><td colspan="100" class="empty-state">No records match your search</td></tr>'; return; }
+    tbody.innerHTML = rows.map(r => `<tr>${columns.map(c=>`<td title="${esc(r[c.slug]||'')}">${esc(r[c.slug]||'')}</td>`).join('')}</tr>`).join('');
+  }
+
+  function renderPagination(page, pages, total) {
+    if (pages<=1) { document.getElementById('pagination').innerHTML=''; return; }
+    let html='';
+    const btn=(label,p,disabled,active)=>`<button class="pg-btn${active?' active':''}" onclick="goPage(${p})" ${disabled?'disabled':''}>${label}</button>`;
+    html+=btn('«',1,page===1); html+=btn('‹',page-1,page===1);
+    let lo=Math.max(1,page-3), hi=Math.min(pages,page+3);
+    if(lo>1) html+=`<span class="pg-info">…</span>`;
+    for(let p=lo;p<=hi;p++) html+=btn(p,p,false,p===page);
+    if(hi<pages) html+=`<span class="pg-info">…</span>`;
+    html+=btn('›',page+1,page===pages); html+=btn('»',pages,page===pages);
+    document.getElementById('pagination').innerHTML=html;
+  }
+
+  function renderFilterTags(filters) {
+    const tags = Object.entries(filters)
+      .filter(([,v])=>v)
+      .map(([k,v])=>{
+        const col=columns.find(c=>c.slug===k);
+        return `<span class="filter-tag" onclick="clearFilter('${k}')">${esc(col?.label||k)}: ${esc(v)} ✕</span>`;
+      }).join('');
+    document.getElementById('filter-tags').innerHTML=tags;
+  }
+
+  function clearFilter(slug) {
+    const el=document.getElementById('f-'+slug);
+    if(el) { el.value=''; debounceSearch(); }
+  }
+
+  function goPage(p) { currentPage=p; doSearch(); window.scrollTo(0,0); }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function showError(msg) { const e=document.getElementById('error-box'); e.textContent='⚠ '+msg; e.style.display='block'; }
+  function hideError() { document.getElementById('error-box').style.display='none'; }
+</script>
+</body>
+</html>
